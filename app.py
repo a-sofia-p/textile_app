@@ -43,7 +43,8 @@ def load_and_clean_data():
         "China": "data/China_exports.csv",
         "Germany": "data/Germany_exports.csv",
         "Korea, Republic of": "data/Korea_exports.csv",
-        "Japan": "data/Japan_exports.csv"
+        "Japan": "data/Japan_exports.csv",
+        "United Kingdom": "data/UK_exports.csv"   
     }
     
     all_data = []
