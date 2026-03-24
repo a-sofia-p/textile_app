@@ -169,6 +169,7 @@ with tab3:
     # Filter Data
     df_year = df_flows[df_flows['Year'] == selected_year]
     origin_country_names = sorted(df_year['Origin'].unique().tolist())
+    destination_country_names = sorted(df_year['Destination'].unique().tolist())
 
     origin_options = ["All"] + origin_country_names
     selected_origin = st.selectbox("Select origin country", options=origin_options, index=0)
@@ -193,15 +194,17 @@ with tab3:
     try:
         world_geo = requests.get(url).json()
         def style_function(feature):
-            country_name = feature['properties']['name']
-            if country_name in origin_country_names or country_name == "South Korea" and "Korea, Republic of" in origin_country_names:
-                return {'fillColor': '#4062BB', 'color': 'none', 'weight': 0, 'fillOpacity': 0.6}
-            else:
-                return {'fillColor': 'none', 'color': 'none', 'weight': 0, 'fillOpacity': 0}
+        country_name = feature['properties']['name']
+        if country_name in origin_country_names or country_name == "South Korea" and "Korea, Republic of" in origin_country_names:
+            return {'fillColor': '#4062BB', 'color': 'none', 'weight': 0, 'fillOpacity': 0.6}
+        elif country_name in destination_country_names or country_name == "South Korea" and "Korea, Republic of" in destination_country_names:
+            return {'fillColor': '#DDA15E', 'color': 'none', 'weight': 0, 'fillOpacity': 0.4}
+        else:
+            return {'fillColor': 'none', 'color': 'none', 'weight': 0, 'fillOpacity': 0}
 
-        folium.GeoJson(world_geo, style_function=style_function).add_to(m)
-    except:
-        pass # Silently fail if GitHub JSON is temporarily unreachable
+    folium.GeoJson(world_geo, style_function=style_function).add_to(m)
+except:
+    pass # Silently fail if GitHub JSON is temporarily unreachable
 
     # Draw Nodes and Edges
     for origin in origin_country_names:
@@ -217,7 +220,7 @@ with tab3:
             )
             marker_color = '#2F6690' if selected_origin != 'All' else '#D96C06'
             folium.CircleMarker(
-                location=origin_coords, radius=7.5, color=marker_color, weight=2,
+                location=origin_coords, radius=7.2, color=marker_color, weight=2,
                 fill=True, fill_color=marker_color, fill_opacity=0.9, popup=popup_html
             ).add_to(m)
             
