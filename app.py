@@ -115,6 +115,17 @@ def load_and_clean_data():
 
 df_flows = load_and_clean_data()
 
+# Loads Origin Country Global Export Totals
+@st.cache_data
+def load_top_exporters():
+    try:
+        return pd.read_csv("data/Top_exporters.csv")
+    except Exception as e:
+        st.warning(f"Could not load Top Exporters data: {e}")
+        return pd.DataFrame()
+
+df_top = load_top_exporters()
+
 # --- APP NAVIGATION ---
 tab1, tab2, tab3 = st.tabs(tab_names)
 
@@ -198,19 +209,18 @@ with tab3:
             # Extract the country name from the GeoJSON data
             country_name = feature['properties']['name']
             
-            # 1. Check if it's an Origin country (Shade Blue)
+            # GeoJSON Origin and Destination country shading
             if country_name in origin_country_names or (country_name == "South Korea" and "Korea, Republic of" in origin_country_names):
                 return {'fillColor': '#2F6690', 'color': '#2F6690', 'weight': 1, 'fillOpacity': 0.4}
                 
-            # 2. Check if it's a Destination country (Shade Tan)
             elif country_name in destination_country_names or (country_name == "South Korea" and "Korea, Republic of" in destination_country_names):
-                return {'fillColor': '#D4A574', 'color': '#D4A574', 'weight': 1, 'fillOpacity': 0.5}
+                return {'fillColor': '#D4A574', 'color': '#D4A574', 'weight': 1, 'fillOpacity': 0.4}
                 
-            # 3. All other countries remain hidden (Transparent)
+            # All other countries remain Transparent
             else:
                 return {'fillColor': 'none', 'color': 'none', 'weight': 0, 'fillOpacity': 0}
 
-        # Add the styled map to our base map 'm'
+        # Add styled map to base map 'm'
         folium.GeoJson(world_geo, style_function=style_function).add_to(m)
         
     except Exception as e:
@@ -223,19 +233,39 @@ with tab3:
         
         if origin_coords:
             # 🚢 Origin marker
-            total_qty = dest_df['Quantity'].sum()
+            total_qty = 0
+            
+            # Find the total export value from our cached df_top
+            if not df_top.empty:
+                top_year_df = df_top[df_top['Year'] == selected_year]
+                if not top_year_df.empty:
+                    row = top_year_df.iloc[0]
+                    # Check columns r1 to r5 for the current origin country
+                    for i in range(1, 6):
+                        country_col = f'r{i}_country'
+                        qty_col = f'r{i}_quantity' if f'r{i}_quantity' in df_top.columns else f'r{i}_uantity'
+                        
+                        if country_col in row and str(row[country_col]).strip() == origin:
+                            qty_str = str(row[qty_col]).replace(',', '').strip()
+                            try:
+                                total_qty = float(qty_str)
+                            except ValueError:
+                                total_qty = 0
+                            break 
+
             popup_html = folium.Popup(
                 f"<div style='font-size:11px'><b>{origin}</b><br>Total Exported: {total_qty:,.0f} Tons 🚢</div>",
                 max_width=200
             )
-            marker_color = '#2F6690' if selected_origin != 'All' else '#D96C06'
+            
+            # Constant color for origin marker (Always Blue)
+            marker_color = '#2F6690' 
             folium.CircleMarker(
                 location=origin_coords, radius=7.2, color=marker_color, weight=2,
                 fill=True, fill_color=marker_color, fill_opacity=0.9, popup=popup_html
             ).add_to(m)
             
             # Lines and destination markers
-            # Using enumerate to create an idx for the offset logic
             for idx, row in enumerate(dest_df.itertuples()):
                 dest_country = row.Destination
                 qty = row.Quantity
@@ -261,8 +291,10 @@ with tab3:
                     ).add_to(m)
 
                     # Destination Marker
-                    dest_color = '#2F6690' if selected_origin != 'All' else '#A3C9A8'
-                    popup_html_dest = f"<div style='font-size:11px'><b>{dest_country}</b>: {qty:,.0f} Tons ⚠️"
+                    # Constant color for destination marker (Always Green)
+                    dest_color = '#A3C9A8' 
+                    popup_html_dest = f"<div style='font-size:11px'><b>{dest_country}</b>: {qty:,.0f} Tons ⚠️</div>"
+                    
                     folium.CircleMarker(
                         location=dest_coords, radius=4, color=dest_color,
                         fill=True, fill_color=dest_color, fill_opacity=0.7,
