@@ -189,20 +189,32 @@ with tab3:
         elif qty > 40000: return "#D98C5F"
         else: return '#8A9A5B'
 
-    # GeoJSON overlay for origin country shading
+    # GeoJSON overlay for origin and destination country shading
     url = 'https://raw.githubusercontent.com/python-visualization/folium/main/examples/data/world-countries.json'
     try:
         world_geo = requests.get(url).json()
+        
         def style_function(feature):
+            # Extract the country name from the GeoJSON data
             country_name = feature['properties']['name']
-            if country_name in origin_country_names or country_name == "South Korea" and "Korea, Republic of" in origin_country_names:
-                return {'fillColor': '#4062BB', 'color': 'none', 'weight': 0, 'fillOpacity': 0.6}
+            
+            # 1. Check if it's an Origin country (Shade Blue)
+            if country_name in origin_country_names or (country_name == "South Korea" and "Korea, Republic of" in origin_country_names):
+                return {'fillColor': '#2F6690', 'color': '#2F6690', 'weight': 1, 'fillOpacity': 0.4}
+                
+            # 2. Check if it's a Destination country (Shade Tan)
+            elif country_name in destination_country_names or (country_name == "South Korea" and "Korea, Republic of" in destination_country_names):
+                return {'fillColor': '#D4A574', 'color': '#D4A574', 'weight': 1, 'fillOpacity': 0.5}
+                
+            # 3. All other countries remain hidden (Transparent)
             else:
                 return {'fillColor': 'none', 'color': 'none', 'weight': 0, 'fillOpacity': 0}
 
+        # Add the styled map to our base map 'm'
         folium.GeoJson(world_geo, style_function=style_function).add_to(m)
-    except:
-        pass # Silently fail if GitHub JSON is temporarily unreachable
+        
+    except Exception as e:
+        st.warning(f"Could not load GeoJSON map overlay: {e}")
 
     # Draw Nodes and Edges
     for origin in origin_country_names:
