@@ -169,7 +169,7 @@ with tab3:
     # Filter Data
     df_year = df_flows[df_flows['Year'] == selected_year]
     origin_country_names = sorted(df_year['Origin'].unique().tolist())
-    destination_country_name = sorted(df_year['Destination'].unique.tolist())
+    destination_country_names = sorted(df_year['Destination'].unique().tolist())
 
     origin_options = ["All"] + origin_country_names
     selected_origin = st.selectbox("Select origin country", options=origin_options, index=0)
