@@ -1,3 +1,7 @@
 def style_function(feature):
-    color = 'blue' if feature['properties']['type'] == 'A' else 'green'
-    return {'color': color}
+    return {
+        'fillColor': 'green' if feature['properties']['mag'] > 5 else 'blue',
+        'color': 'black',
+        'weight': 1,
+        'fillOpacity': 0.7
+    }
