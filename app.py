@@ -169,7 +169,7 @@ Use the **Explore** tab to interact with the map and see year-by-year trends.
 with tab3:
     st.title("Global Flow of Worn Clothing")
     
-    # UI Controls
+    #UI Controls
     min_year, max_year = int(df_flows['Year'].min()), int(df_flows['Year'].max())
     year_options = sorted(list(range(min_year, max_year + 1)), reverse=True)
 
@@ -177,21 +177,45 @@ with tab3:
     default_year = 2024 if 2024 in year_options else year_options[0]
     selected_year = st.selectbox("Select Year", options=year_options, index=year_options.index(default_year))
 
-    # Filter Data
+    # Filter Data by Year
     df_year = df_flows[df_flows['Year'] == selected_year]
-    origin_country_names = sorted(df_year['Origin'].unique().tolist())
+    
+    # Find which countries are actually in the Top 5 for the selected year
+    valid_origins_for_year = []
+    if not df_top.empty:
+        top_year_df = df_top[df_top['Year'] == selected_year]
+        if not top_year_df.empty:
+            row = top_year_df.iloc[0]
+            for i in range(1, 6):
+                col = f'r{i}_country'
+                if col in row and pd.notna(row[col]):
+                    valid_origins_for_year.append(str(row[col]).strip())
+
+    # Get all origins from the detailed data, but only keep the ones that are in the Top 5
+    raw_origins = sorted(df_year['Origin'].unique().tolist())
+    origin_country_names = [country for country in raw_origins if country in valid_origins_for_year]
+    
+    # Fallback: Just in case a year has no Top 5 data at all, show all countries
+    if not origin_country_names:
+        origin_country_names = raw_origins
+
+    # ---> NEW FIX: Filter the actual dataframe to ONLY include our valid top origins! <---
+    df_year = df_year[df_year['Origin'].isin(origin_country_names)]
+
+    # Now calculate destinations based on the filtered dataframe
     destination_country_names = sorted(df_year['Destination'].unique().tolist())
 
+    # Create the dropdown with our cleaned-up list
     origin_options = ["All"] + origin_country_names
     selected_origin = st.selectbox("Select origin country", options=origin_options, index=0)
 
-    # Apply origin filter for table + map
+    # Apply specific origin filter if the user doesn't want "All"
     if selected_origin != "All":
         df_year = df_year[df_year['Origin'] == selected_origin]
         origin_country_names = [selected_origin]
+        destination_country_names = sorted(df_year['Destination'].unique().tolist())
 
     # Initialize Map
-    # Zoom out slightly to ensure the full globe fits well in the centered layout.
     m = folium.Map(location=[20, 0], zoom_start=1.7, tiles='cartodb positron')
     
     # Helper to color lines by quantity
