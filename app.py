@@ -6,7 +6,7 @@ from folium.plugins import AntPath
 from streamlit_folium import st_folium
 
 # --- PAGE CONFIG ---
-st.set_page_config(page_title="Textile Waste Colonialism", layout="centered")
+st.set_page_config(page_title="Textile Waste and Fast Fashion", layout="centered")
 
 # Inject CSS for background image and title styling
 # Also constrain the main column width to keep the map/controls from expanding too wide.
@@ -121,7 +121,7 @@ tab1, tab2, tab3 = st.tabs(tab_names)
 with tab1:
     # (Header injected above)
     st.markdown("""
-    Inspiration for this project lies around 5,000 miles (8,000 kilometers) away from New York City, 
+    Inspiration for this project lies around 5,000 miles (8,000 km) away from New York City, 
     in one of the oldest and driest deserts in the world – the Atacama Desert in northern Chile. 
     From a distance, mounts of clothing and textile scraps seemingly blend in with the dunes and dry hills in the landscape. 
     From up close, bright colors begin to stand out from discarded ripped jeans, leather boots, heals and old bracelets 
@@ -146,9 +146,9 @@ with tab1:
 with tab2:
     st.header("About")
     st.markdown(
-        """This project visualizes global textile waste exports and the connections between major exporters and their destinations.
+        """This project visualizes global textile waste (worn clothing) exports and the connections between major exporters and their destinations.
 
-- The map shows export flows by country and quantity.
+- The map shows export flows by country and year.
 - The data comes from public trade statistics and is simplified for visualization.
 
 Use the **Explore** tab to interact with the map and see year-by-year trends.
