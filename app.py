@@ -169,7 +169,7 @@ with tab3:
     # Filter Data
     df_year = df_flows[df_flows['Year'] == selected_year]
     origin_country_names = sorted(df_year['Origin'].unique().tolist())
-    destination_country_names = sorted(df_year['Destination'].unique().tolist())
+    destination_country_name = sorted(df_year['Destination'].unique.tolist())
 
     origin_options = ["All"] + origin_country_names
     selected_origin = st.selectbox("Select origin country", options=origin_options, index=0)
@@ -188,16 +188,15 @@ with tab3:
         if qty > 100000: return "#22223B"
         elif qty > 40000: return "#D98C5F"
         else: return '#8A9A5B'
-'''         
+
     # GeoJSON overlay for origin country shading
     url = 'https://raw.githubusercontent.com/python-visualization/folium/main/examples/data/world-countries.json'
     try:
         world_geo = requests.get(url).json()
-        def style_function(country_name):
-            if country_name in origin_country_names or (country_name == "South Korea" and "Korea, Republic of" in origin_country_names):
-                return 'blue'
-            elif country_name in destination_country_names or (country_name == "South Korea" and "Korea, Republic of" in destination_country_names):
-                return '#D4A574' # tan fill
+        def style_function(feature):
+            country_name = feature['properties']['name']
+            if country_name in origin_country_names or country_name == "South Korea" and "Korea, Republic of" in origin_country_names:
+                return {'fillColor': '#4062BB', 'color': 'none', 'weight': 0, 'fillOpacity': 0.6}
             else:
                 return {'fillColor': 'none', 'color': 'none', 'weight': 0, 'fillOpacity': 0}
 
@@ -205,30 +204,6 @@ with tab3:
     except:
         pass # Silently fail if GitHub JSON is temporarily unreachable
 
-'''
-    # GeoJSON overlay for origin country shading
-    url = 'https://raw.githubusercontent.com/python-visualization/folium/main/examples/data/world-countries.json'
-    try:
-        world_geo = requests.get(url).json()
-        def style_function(feature):
-            country_name = feature['properties']['name']    
-            if country_name in origin_country_names or (country_name == "South Korea" and "Korea, Republic of" in origin_country_names):
-                return {'fillColor': 'blue', 'color': 'blue', 'weight': 1, 'fillOpacity': 0.4}
-                
-            # Return a dictionary of style properties for destinations
-            elif country_name in destination_country_names or (country_name == "South Korea" and "Korea, Republic of" in destination_country_names):
-                return {'fillColor': '#D4A574', 'color': '#D4A574', 'weight': 1, 'fillOpacity': 0.4}
-                
-            # Return the default transparent style for all other countries
-            else:
-                return {'fillColor': 'none', 'color': 'none', 'weight': 0, 'fillOpacity': 0}
-
-        folium.GeoJson(world_geo, style_function=style_function).add_to(m)
-        
-    except Exception as e:
-        # It's helpful to print the error to Streamlit so you know if the download failed!
-        st.warning(f"Could not load GeoJSON map overlay: {e}") 
-    
     # Draw Nodes and Edges
     for origin in origin_country_names:
         origin_coords = COORDS.get(origin)
