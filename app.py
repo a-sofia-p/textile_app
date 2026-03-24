@@ -169,7 +169,7 @@ with tab3:
     # Filter Data
     df_year = df_flows[df_flows['Year'] == selected_year]
     origin_country_names = sorted(df_year['Origin'].unique().tolist())
-    destination_country_name = sorted(df_year['Destination'].unique.tolist())
+    destination_country_name = sorted(df_year['Destination'].unique().tolist())
 
     origin_options = ["All"] + origin_country_names
     selected_origin = st.selectbox("Select origin country", options=origin_options, index=0)
@@ -193,10 +193,11 @@ with tab3:
     url = 'https://raw.githubusercontent.com/python-visualization/folium/main/examples/data/world-countries.json'
     try:
         world_geo = requests.get(url).json()
-        def style_function(feature):
-            country_name = feature['properties']['name']
-            if country_name in origin_country_names or country_name == "South Korea" and "Korea, Republic of" in origin_country_names:
-                return {'fillColor': '#4062BB', 'color': 'none', 'weight': 0, 'fillOpacity': 0.6}
+        def style_function(country_name):
+            if country_name in origin_country_names or (country_name == "South Korea" and "Korea, Republic of" in origin_country_names):
+                return 'blue'
+            elif country_name in destination_country_names or (country_name == "South Korea" and "Korea, Republic of" in destination_country_names):
+                return '#D4A574' # tan fill
             else:
                 return {'fillColor': 'none', 'color': 'none', 'weight': 0, 'fillOpacity': 0}
 
