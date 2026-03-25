@@ -6,7 +6,7 @@ from folium.plugins import AntPath
 from streamlit_folium import st_folium
 
 # --- PAGE CONFIG ---
-st.set_page_config(page_title="Textile Waste and Fast Fashion", layout="centered")
+st.set_page_config(page_title="Textile Trade, Fast Fashion & Waste Colonialism", layout="centered")
 
 # Inject CSS for background image and title styling
 # Also constrain the main column width to keep the map/controls from expanding too wide.
@@ -17,7 +17,7 @@ st.markdown("""
         background-image: url('https://as2.ftcdn.net/v2/jpg/03/93/78/39/1000_F_393783937_QcOuNgRBxjxwtvsh0b2K3g253yOND8TU.jpg');
         background-size: cover;
         background-position: center;
-        padding: 80px 20px 60px 20px;
+        padding: 40px 20px 30px 20px;
         border-radius: 10px;
         margin-bottom: 25px;
     }
@@ -35,20 +35,25 @@ st.markdown("""
         position: relative;
         color: white;
         z-index: 1;
-        font-size: 3em;
+        font-size: 2em;
         text-align: center;
     }
 
     /* Keep the main content centered and prevent it from going too wide */
     section[data-testid="stAppViewContainer"] .main .block-container {
-        max-width: 860px;
+        max-width: 1000px;
         padding-left: 1.2rem;
         padding-right: 1.2rem;
     }
+    /* Make the Tab titles larger */
+    .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
+        font-size: 18px;
+        font-weight: 600;
+    }        
     </style>
 
     <div class="custom-header">
-        <h1>Textile Industry and Fast Fashion</h1>
+        <h1>Textile Trade, Fast Fashion & Waste</h1>
     </div>
 """, unsafe_allow_html=True)
 
@@ -167,56 +172,69 @@ Use the **Explore** tab to interact with the map and see year-by-year trends.
     )
 
 with tab3:
-    st.title("Global Flow of Worn Clothing")
+    st.title("Global Trade Networkof Worn Clothing")
     
-    #UI Controls
-    min_year, max_year = int(df_flows['Year'].min()), int(df_flows['Year'].max())
-    year_options = sorted(list(range(min_year, max_year + 1)), reverse=True)
-
-    # Default to 2024 if available, otherwise default to the latest year.
-    default_year = 2024 if 2024 in year_options else year_options[0]
-    selected_year = st.selectbox("Select Year", options=year_options, index=year_options.index(default_year))
-
-    # Filter Data by Year
-    df_year = df_flows[df_flows['Year'] == selected_year]
-    
-    # Find which countries are actually in the Top 5 for the selected year
-    valid_origins_for_year = []
+    # Pre-calculate all valid combinations of Year and Origin from df_top
+    valid_combos = []
     if not df_top.empty:
-        top_year_df = df_top[df_top['Year'] == selected_year]
-        if not top_year_df.empty:
-            row = top_year_df.iloc[0]
+        for _, row in df_top.iterrows():
+            y = row['Year']
             for i in range(1, 6):
                 col = f'r{i}_country'
                 if col in row and pd.notna(row[col]):
-                    valid_origins_for_year.append(str(row[col]).strip())
-
-    # Get all origins from the detailed data, but only keep the ones that are in the Top 5
-    raw_origins = sorted(df_year['Origin'].unique().tolist())
-    origin_country_names = [country for country in raw_origins if country in valid_origins_for_year]
+                    valid_combos.append({'Year': int(y), 'Origin': str(row[col]).strip()})
     
-    # Fallback: Just in case a year has no Top 5 data at all, show all countries
-    if not origin_country_names:
-        origin_country_names = raw_origins
+    df_valid = pd.DataFrame(valid_combos)
 
-    # ---> NEW FIX: Filter the actual dataframe to ONLY include our valid top origins! <---
-    df_year = df_year[df_year['Origin'].isin(origin_country_names)]
+    # Get all possible origins across ALL years for our dropdown
+    if not df_valid.empty:
+        all_possible_origins = sorted(df_valid['Origin'].unique().tolist())
+    else:
+        all_possible_origins = sorted(df_flows['Origin'].unique().tolist())
 
-    # Now calculate destinations based on the filtered dataframe
-    destination_country_names = sorted(df_year['Destination'].unique().tolist())
+    origin_options = ["All"] + all_possible_origins
 
-    # Create the dropdown with our cleaned-up list
-    origin_options = ["All"] + origin_country_names
-    selected_origin = st.selectbox("Select origin country", options=origin_options, index=0)
+    # Create side-by-side columns for the UI Controls
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # User selects Origin first (or leaves as "All")
+        selected_origin = st.selectbox("Select origin country", options=origin_options, index=0)
 
-    # Apply specific origin filter if the user doesn't want "All"
+    with col2:
+        # Filter the available years based on the selected Origin!
+        if selected_origin == "All":
+            year_options = sorted(df_flows['Year'].unique().tolist(), reverse=True)
+        else:
+            if not df_valid.empty:
+                year_options = sorted(df_valid[df_valid['Origin'] == selected_origin]['Year'].unique().tolist(), reverse=True)
+            else:
+                year_options = sorted(df_flows[df_flows['Origin'] == selected_origin]['Year'].unique().tolist(), reverse=True)
+        
+        # Default to the most recent year available for their selection
+        default_year = year_options[0] if year_options else 2024
+        selected_year = st.selectbox("Select Year", options=year_options, index=year_options.index(default_year) if default_year in year_options else 0)
+
+    # Filter the main dataframe using BOTH selections
+    df_year = df_flows[df_flows['Year'] == selected_year]
+    
     if selected_origin != "All":
         df_year = df_year[df_year['Origin'] == selected_origin]
         origin_country_names = [selected_origin]
-        destination_country_names = sorted(df_year['Destination'].unique().tolist())
+    else:
+        # If "All", only keep the origins that were in the Top 5 for that specific year
+        if not df_valid.empty:
+            origin_country_names = df_valid[df_valid['Year'] == selected_year]['Origin'].tolist()
+        else:
+            origin_country_names = df_year['Origin'].unique().tolist()
+            
+        df_year = df_year[df_year['Origin'].isin(origin_country_names)]
+
+    # Calculate destinations based on the final filtered dataframe
+    destination_country_names = sorted(df_year['Destination'].unique().tolist())
 
     # Initialize Map
-    m = folium.Map(location=[20, 0], zoom_start=1.7, tiles='cartodb positron')
+    m = folium.Map(location=[20, 0], zoom_start=1.9, tiles='cartodb positron')
     
     # Helper to color lines by quantity
     def get_color(qty):
@@ -278,11 +296,11 @@ with tab3:
                             break 
 
             popup_html = folium.Popup(
-                f"<div style='font-size:11px'><b>{origin}</b><br>Total Exported: {total_qty:,.0f} Tons 🚢</div>",
+                f"<div style='font-size:11px'><b>{origin}</b><br>Total Exported ({selected_year}): {total_qty:,.0f} Tons 🚢</div>",
                 max_width=200
             )
             
-            # Constant color for origin marker (Always Blue)
+            # Set color for origin marker
             marker_color = '#2F6690' 
             folium.CircleMarker(
                 location=origin_coords, radius=7.2, color=marker_color, weight=2,
@@ -329,7 +347,7 @@ with tab3:
     legend_html = """
     <div style="
         position: absolute;
-        bottom: 24px; left: 24px;
+        bottom: 24px; right: 24px;
         max-width: 240px;
         background: rgba(255,255,255,0.95);
         border-radius: 14px;
@@ -341,9 +359,9 @@ with tab3:
         color: #222;
         z-index: 9999;
     ">
-    <div style="font-weight: 700; margin-bottom: 8px;">Export Quantity</div>
+    <div style="font-weight: 700; margin-bottom: 8px;">Yearly Export Quantity</div>
     <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
-        <span style="width:14px; height:14px; border-radius:3px; background:#22223B; display:inline-block;"></span>
+        <span style="width:14px; height:13.5px; border-radius:3px; background:#22223B; display:inline-block;"></span>
         <span>> 100,000 Tons</span>
     </div>
     <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
@@ -359,7 +377,7 @@ with tab3:
     m.get_root().html.add_child(folium.Element(legend_html))
 
     # Map size
-    st_folium(m, width=700, height=580)
+    st_folium(m, width=900, height=580)
     
     # Data Table
     st.markdown(f"### Flow Data for {selected_year}")
