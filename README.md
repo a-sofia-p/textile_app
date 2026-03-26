@@ -17,7 +17,7 @@ The **Cemetery of Clothes**, as referred to by the locals, serves as a vibrant w
 
 Leveraging data form the <a href="https://www.trademap.org/Country_SelProduct_TS.aspx?nvpm=1%7c%7c%7c%7c%7c6309%7c%7c%7c4%7c1%7c1%7c2%7c2%7c1%7c2%7c1%7c%7c1">International Trade Center (2015 - 2024)</a>, this project visualizes global worn clothing exports and the network between the top five exporting countries and their destinations.  
 
-[**Access Streamlit App here🖥️**](https://textilewaste.streamlit.app/  ) or  [**preview App as PDF here📄**](app_preview.pdf) 
+[**Access Streamlit App here🖥️**](https://textilewaste.streamlit.app/  ) or  [**preview App as PDF here📄**](App_preview.pdf) 
 
 ____
 ## App Characteristics:
